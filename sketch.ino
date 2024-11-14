@@ -1,4 +1,6 @@
 #include <ESP32Servo.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
 
 #define DATA_PIN 5   // Pino conectado ao DS do 74HC595
 #define LATCH_PIN 22 // Pino conectado ao STCP do 74HC595
@@ -17,101 +19,173 @@ int posicaoServo = 90; // Posição inicial do servo (meio)
 // Inicializando o valor global de luminosidade
 int totalLuminosity = 0;
 
+// Variáveis para configurações editáveis
+char *SSID = const_cast<char *>("Wokwi-GUEST");
+char *PASSWORD = const_cast<char *>("");
+char *BROKER_MQTT = const_cast<char *>("");
+int BROKER_PORT = 1883;
+char *TOPICO_PUBLISH_E = const_cast<char *>("/TEF/device001/attrs/e"); // Checar a coleta no lado leste
+char *TOPICO_PUBLISH_W = const_cast<char *>("/TEF/device001/attrs/w"); // Checar a coleta no lado oeste
+char *TOPICO_PUBLISH_EFF = const_cast<char *>("/TEF/device001/attrs/eff"); // Checar a eficiencia energética
+char *ID_MQTT = const_cast<char *>("fiware_001");
+const char *topicPrefix = "device001";
+
+WiFiClient espClient;
+PubSubClient MQTT(espClient);
+
 void setup()
 {
-    initSerial();
-    servoSetup();
-    pinMode(DATA_PIN, OUTPUT);
-    pinMode(LATCH_PIN, OUTPUT);
-    pinMode(CLOCK_PIN, OUTPUT);
-    pinMode(EXTRA_PIN, OUTPUT);   // Pino para indicar efiencia energetica maxima
-    digitalWrite(EXTRA_PIN, LOW); // Inicializa a indicação de efiencia energetica maxima como desligada
+  initWiFi();
+  initMQTT();
+  initPin();
+  initSerial();
+  servoSetup();
 }
 
 void loop()
 {
-    handleSolarLight();
-    updateLeds(); // Atualiza os LEDs com base no nível de carga
-    delay(2000);  // Aguarda 2 segundos antes da próxima leitura
+  handleSolarLight();
+  updateLeds(); // Atualiza os LEDs com base no nível de carga
+  verifyMQTTWifiConnections();
+  MQTT.loop();
+  delay(2000);  // Aguarda 2 segundos antes da próxima leitura
+}
+
+void reconectWiFi()
+{
+  if (WiFi.status() == WL_CONNECTED)
+    return;
+  WiFi.begin(SSID, PASSWORD);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(100);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.println("Conectado com sucesso na rede ");
+  Serial.print(SSID);
+  Serial.println("IP obtido: ");
+  Serial.println(WiFi.localIP());
+}
+
+void verifyMQTTWifiConnections()
+{
+  if (!MQTT.connected())
+    reconnectMQTT();
+  reconectWiFi();
+}
+
+void initWiFi()
+{
+  delay(10);
+  Serial.println("Conexao WI-FI");
+  Serial.print("Conectando-se na rede: ");
+  Serial.println(SSID);
+  Serial.println("Aguarde");
+  reconectWiFi();
+}
+
+void initMQTT()
+{
+  MQTT.setServer(BROKER_MQTT, BROKER_PORT);
+}
+
+void initPin()
+{
+  pinMode(DATA_PIN, OUTPUT);
+  pinMode(LATCH_PIN, OUTPUT);
+  pinMode(CLOCK_PIN, OUTPUT);
+  pinMode(EXTRA_PIN, OUTPUT);   // Pino para indicar efiencia energetica maxima
+  digitalWrite(EXTRA_PIN, LOW); // Inicializa a indicação de efiencia energetica maxima como desligada
 }
 
 void initSerial()
 {
-    Serial.begin(115200);
-    delay(1000);
+  Serial.begin(115200);
+  delay(1000);
 }
 
 void servoSetup()
 {
-    servoMotor.attach(servoPin, 500, 2400); // Configuração dos pulsos para ESP32
-    servoMotor.write(posicaoServo);         // Define posição inicial do servo
+  servoMotor.attach(servoPin, 500, 2400); // Configuração dos pulsos para ESP32
+  servoMotor.write(posicaoServo);         // Define posição inicial do servo
 }
 
 void handleSolarLight()
 {
-    // Lê a intensidade de luz dos LDRs e utiliza a função map
-    int luminosity1 = map(analogRead(ldr1Pin), 0, 4095, 100, 0);
-    int luminosity2 = map(analogRead(ldr2Pin), 0, 4095, 100, 0);
+  // Lê a intensidade de luz dos LDRs e utiliza a função map
+  int luminosity1 = map(analogRead(ldr1Pin), 0, 4095, 100, 0);
+  int luminosity2 = map(analogRead(ldr2Pin), 0, 4095, 100, 0);
 
-    // Exibe os valores dos LDRs no monitor serial
-    Serial.println("----=()=----");
-    Serial.print("Luz LDR 1: ");
-    Serial.println(luminosity1);
-    Serial.print("Luz LDR 2: ");
-    Serial.println(luminosity2);
+  // Exibe os valores dos LDRs no monitor serial
+  Serial.println("----=()=----");
+  Serial.print("Luz LDR 1: ");
+  Serial.println(luminosity1);
+  Serial.print("Luz LDR 2: ");
+  Serial.println(luminosity2);
 
-    // Movimenta o servo para o lado que recebe mais luz solar
-    if (luminosity1 > luminosity2 + 5) // Ajuste de 5% para evitar pequenas variacões
-    {                                              
-        posicaoServo = min(posicaoServo + 5, 180); // Move para a direita
-        servoMotor.write(posicaoServo);
-        Serial.println("Correção para a direita");
-    }
-    else if (luminosity2 > luminosity1 + 5)
-    {
-        posicaoServo = max(posicaoServo - 5, 0); // Move para a esquerda
-        servoMotor.write(posicaoServo);
-        Serial.println("Correção para a esquerda");
-    }
-    else
-    {
-        Serial.println("Nenhuma mudança de correção");
-    }
+  // Movimenta o servo para o lado que recebe mais luz solar
+  if (luminosity1 > luminosity2 + 5) // Ajuste de 5% para evitar pequenas variacões
+  {
+    posicaoServo = min(posicaoServo + 5, 180); // Move para a direita
+    servoMotor.write(posicaoServo);
+    Serial.println("Correção para a direita");
+  }
+  else if (luminosity2 > luminosity1 + 5)
+  {
+    posicaoServo = max(posicaoServo - 5, 0); // Move para a esquerda
+    servoMotor.write(posicaoServo);
+    Serial.println("Correção para a esquerda");
+  }
+  else
+  {
+    Serial.println("Nenhuma mudança de correção");
+  }
 
-    // Atualiza o nível de carga com a média das leituras
-    totalLuminosity = (luminosity1 + luminosity2) / 2;
-    Serial.print("Eficiência: ");
-    Serial.print(totalLuminosity);
-    Serial.println("%");
+  // Atualiza o nível de carga com a média das leituras
+  totalLuminosity = (luminosity1 + luminosity2) / 2;
+  Serial.print("Eficiência: ");
+  Serial.print(totalLuminosity);
+  Serial.println("%");
+
+  // Publicação dos dados via MQTT
+  String mensagemOeste = String(luminosity1);
+  String mensagemLeste = String(luminosity2);
+  String mensagemEff = String(totalLuminosity);
+
+  // Publica os dados de umidade e temperatura via MQTT como texto simples
+  MQTT.publish(TOPICO_PUBLISH_W, mensagemOeste.c_str());
+  MQTT.publish(TOPICO_PUBLISH_E, mensagemLeste.c_str());
+  MQTT.publish(TOPICO_PUBLISH_EFF, mensagemEff.c_str());
 }
 
 // Função para atualizar os LEDs conforme o nível de efiencia energetica
 void updateLeds()
 {
-    // Mapeia o nível de carga para o número de LEDs a serem acesos
-    int ledsToLight = map(totalLuminosity, 0, 100, 0, numLeds);
+  // Mapeia o nível de carga para o número de LEDs a serem acesos
+  int ledsToLight = map(totalLuminosity, 0, 100, 0, numLeds);
 
-    // Variável para armazenar o padrão dos LEDs
-    byte ledPattern = 0;
+  // Variável para armazenar o padrão dos LEDs
+  byte ledPattern = 0;
 
-    // Define os bits de `ledPattern` para acender os LEDs necessários
-    for (int i = 0; i < ledsToLight; i++)
-    {
-        ledPattern |= (1 << i); // Liga os LEDs até o índice `ledsToLight`
-    }
+  // Define os bits de `ledPattern` para acender os LEDs necessários
+  for (int i = 0; i < ledsToLight; i++)
+  {
+    ledPattern |= (1 << i); // Liga os LEDs até o índice `ledsToLight`
+  }
 
-    // Envia o padrão para o shift register
-    digitalWrite(LATCH_PIN, LOW);
-    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, ledPattern); // Envia o padrão de bits
-    digitalWrite(LATCH_PIN, HIGH);
+  // Envia o padrão para o shift register
+  digitalWrite(LATCH_PIN, LOW);
+  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, ledPattern); // Envia o padrão de bits
+  digitalWrite(LATCH_PIN, HIGH);
 
-    // Se todos os LEDs estiverem acesos, indica que aeficiencia energética está no máximo
-    if (ledsToLight == numLeds)
-    {
-        digitalWrite(EXTRA_PIN, HIGH); // Liga a indicação de eficiencia energética máxima
-    }
-    else
-    {
-        digitalWrite(EXTRA_PIN, LOW); // Desliga a indicação de eficiencia energética máxima
-    }
+  // Se todos os LEDs estiverem acesos, indica que aeficiencia energética está no máximo
+  if (ledsToLight == numLeds)
+  {
+    digitalWrite(EXTRA_PIN, HIGH); // Liga a indicação de eficiencia energética máxima
+  }
+  else
+  {
+    digitalWrite(EXTRA_PIN, LOW); // Desliga a indicação de eficiencia energética máxima
+  }
 }
