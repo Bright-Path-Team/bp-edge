@@ -45,10 +45,10 @@ void setup()
 void loop()
 {
   handleSolarLight();
-  updateLeds(); // Atualiza os LEDs com base no nível de carga
+  updateLeds();
   verifyMQTTWifiConnections();
   MQTT.loop();
-  delay(2000);  // Aguarda 2 segundos antes da próxima leitura
+  delay(2000);
 }
 
 void reconectWiFi()
@@ -73,6 +73,26 @@ void verifyMQTTWifiConnections()
   if (!MQTT.connected())
     reconnectMQTT();
   reconectWiFi();
+}
+
+void reconnectMQTT()
+{
+  while (!MQTT.connected())
+  {
+    Serial.print("【┘】Tentando se conectar ao Broker MQTT: ");
+    Serial.println(BROKER_MQTT);
+    if (MQTT.connect(ID_MQTT))
+    {
+      Serial.println("✔ Conectado com sucesso ao broker MQTT!");
+      //MQTT.subscribe(TOPICO_SUBSCRIBE);
+    }
+    else
+    {
+      Serial.println("✖ Falha ao reconectar no broker");
+      Serial.println("✖ Haverá nova tentativa de conexão em 2s");
+      delay(1000);
+    }
+  }
 }
 
 void initWiFi()
