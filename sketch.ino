@@ -13,25 +13,28 @@ const int servoPin = 13; // Pino do servo no ESP32
 
 const int numLeds = 8; // Número de LEDs no LED bar graph controlado pelo 74HC595
 
-Servo servoMotor;      // Cria o objeto Servo
-int posicaoServo = 90; // Posição inicial do servo (meio)
+// Criação dos objetos necessários
+Servo servoMotor;
+WiFiClient espClient;
+PubSubClient MQTT(espClient);
+
+int posicaoServo = 90; // Posição inicial do servo (90º)
 
 // Inicializando o valor global de luminosidade
 int totalLuminosity = 0;
 
-// Variáveis para configurações editáveis
+// Configuração da conexão do ESP32 com Wifi
 char *SSID = const_cast<char *>("Wokwi-GUEST");
 char *PASSWORD = const_cast<char *>("");
 char *BROKER_MQTT = const_cast<char *>("");
 int BROKER_PORT = 1883;
-char *TOPICO_PUBLISH_E = const_cast<char *>("/TEF/device001/attrs/e"); // Checar a coleta no lado leste
-char *TOPICO_PUBLISH_W = const_cast<char *>("/TEF/device001/attrs/w"); // Checar a coleta no lado oeste
+char *TOPICO_SUBSCRIBE = const_cast<char *>("/TEF/device001/cmd"); // Tópico de escuta do MQTT
+char *TOPICO_PUBLISH_E = const_cast<char *>("/TEF/device001/attrs/ea"); // Checar a coleta no lado leste
+char *TOPICO_PUBLISH_W = const_cast<char *>("/TEF/device001/attrs/we"); // Checar a coleta no lado oeste
 char *TOPICO_PUBLISH_EFF = const_cast<char *>("/TEF/device001/attrs/eff"); // Checar a eficiencia energética
 char *ID_MQTT = const_cast<char *>("fiware_001");
 const char *topicPrefix = "device001";
 
-WiFiClient espClient;
-PubSubClient MQTT(espClient);
 
 void setup()
 {
@@ -84,7 +87,7 @@ void reconnectMQTT()
     if (MQTT.connect(ID_MQTT))
     {
       Serial.println("✔ Conectado com sucesso ao broker MQTT!");
-      //MQTT.subscribe(TOPICO_SUBSCRIBE);
+      MQTT.subscribe(TOPICO_SUBSCRIBE);
     }
     else
     {
@@ -147,13 +150,13 @@ void handleSolarLight()
   // Movimenta o servo para o lado que recebe mais luz solar
   if (luminosity1 > luminosity2 + 5) // Ajuste de 5% para evitar pequenas variacões
   {
-    posicaoServo = min(posicaoServo + 5, 180); // Move para a direita
+    posicaoServo = min(posicaoServo + 6, 180); // Move para a direita
     servoMotor.write(posicaoServo);
     Serial.println("Correção para a direita");
   }
   else if (luminosity2 > luminosity1 + 5)
   {
-    posicaoServo = max(posicaoServo - 5, 0); // Move para a esquerda
+    posicaoServo = max(posicaoServo - 6, 0); // Move para a esquerda
     servoMotor.write(posicaoServo);
     Serial.println("Correção para a esquerda");
   }
