@@ -24,17 +24,17 @@ Esse projeto busca abordar a necessidade de soluções de energias renováveis a
 - Faça as devidas alterações no [sketch.ino](/sketch.ino) de acordo com a lógica de seu programa e os dispositivos IoT que serão utilizados;
 
 ## Painel STH no LINUX (Dashboard)
-1 - Realize o download do arquivo [api-sth.py](/api-sth.py) em um diretório do linux;
-2 - Utilize um ambiente virtual para evitar realizar o download de bibliotecas em excesso em sua máquina - `python -m venv venv`;
-3 - Acesse o ambiente virtual `source venv/bin/activate` e realize o download das bibliotecas necessárias: `pip install dash plotly requests pytz datetime`;
-4 - Saia do ambiente virtual: `deactivate`;
+1 - Realize o download do arquivo [api-sth.py](/api-sth.py) em um diretório do linux; <br>
+2 - Utilize um ambiente virtual para evitar realizar o download de bibliotecas em excesso em sua máquina - `python -m venv venv`; <br>
+3 - Acesse o ambiente virtual `source venv/bin/activate` e realize o download das bibliotecas necessárias: `pip install dash plotly requests pytz datetime`; <br>
+4 - Saia do ambiente virtual: `deactivate`; <br>
 5 - Utilize o comando `python3 api-sth.py`;
 
 > [!WARNING]  
 > Sempre que fechar o terminal que está conectado na máquina, o Dashboard irá parar de funcionar, para isso, iremos criar um serviço, utilizando o Daemon.
 
 ### Criação do serviço Daemon
-1 - Navegue até o diretório `/etc/systemd/system` e crie um arquivo com a extensão `.service` -> `sudo nano /etc/systemd/system/api-sth.service`;
+1 - Navegue até o diretório `/etc/systemd/system` e crie um arquivo com a extensão `.service` -> `sudo nano /etc/systemd/system/api-sth.service`; <br>
 2 - Preencha esse arquivo .service com as seguintes informações:
 ```bash
 [Unit]
@@ -50,8 +50,8 @@ Restart=always                                              # Sempre que houver 
 [Install]
 WantedBy=multi-user.target                                  # Define que o serviço será iniciado automaticamente no sistema
 ```
-3 - Reinicie o daemon -> `sudo systemctl daemon-reload`;
-4 - Verifique o status de seu serviço `sudo systemctl status api-sth.service` e inicialize-o se necessário `sudo systemctl start api-sth.service`;
+3 - Reinicie o daemon -> `sudo systemctl daemon-reload`; <br>
+4 - Verifique o status de seu serviço `sudo systemctl status api-sth.service` e inicialize-o se necessário `sudo systemctl start api-sth.service`; <br>
 5 - Para ter total certeza de que o serviço irá inicializar com o Linux, utilize o comando `sudo systemctl enable api-sth.service`;
 
 ## Desenvolvedores do projeto:
