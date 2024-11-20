@@ -23,6 +23,9 @@ Esse projeto busca abordar a necessidade de soluções de energias renováveis a
 - Realize a configuração de sua [collection](https://github.com/fabiocabrini/fiware/blob/main/FIWARE%20Descomplicado.postman_collection.json) (recomendação: Postman);
 - Faça as devidas alterações no [sketch.ino](/sketch.ino) de acordo com a lógica de seu programa e os dispositivos IoT que serão utilizados;
 
+### Arquitetura do projeto
+![architecture](https://github.com/user-attachments/assets/60c8cd75-7416-4107-9f3f-bd73ed70b870)
+
 ## Painel STH no LINUX (Dashboard)
 1 - Realize o download do arquivo [api-sth.py](/api-sth.py) em um diretório do linux; <br>
 2 - Utilize um ambiente virtual para evitar realizar o download de bibliotecas em excesso em sua máquina - `python -m venv venv`; <br>
