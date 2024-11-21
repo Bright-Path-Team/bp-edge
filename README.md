@@ -1,7 +1,11 @@
 # BP - Edge
 
 ## Descrição do Projeto
-Esse projeto busca abordar a necessidade de soluções de energias renováveis acessíveis principalmente em áreas mais carentes, utilizando sistemas embarcados para prototipagem e monitoramento de dados de desempenho de coleta e armazenamento de energia solar. A composição básica dele é a prototipagem através de dois LDRs que simulam a coleta de energia solar, o projeto se comunica com o FIWARE através de um serviço cloud que armazena os dados através do Módulo STH Comet do próprio FIWARE, essas informações são informadas no [Front End](https://github.com/Bright-Path-Team/bp-front) da Bright Path.
+Este projeto tem como objetivo abordar a crescente necessidade de soluções acessíveis de energias renováveis, com foco especial em comunidades e regiões mais carentes. A iniciativa utiliza sistemas embarcados para a prototipagem de dispositivos e o monitoramento de dados relacionados ao desempenho na coleta e no armazenamento de energia solar.
+
+A estrutura básica do projeto envolve a utilização de dois sensores LDR, que simulam o processo de coleta de energia solar. Esses sensores são integrados a um sistema que se comunica com o FIWARE por meio de um serviço em nuvem. Esse serviço é responsável por armazenar os dados gerados utilizando o módulo STH Comet, parte integrante do ecossistema FIWARE. Posteriormente, as informações coletadas e processadas são exibidas em uma interface intuitiva no [Front End](https://github.com/Bright-Path-Team/bp-front) da plataforma Bright Path, permitindo maior transparência e acessibilidade aos dados monitorados.
+
+Essa abordagem não apenas explora soluções tecnológicas inovadoras, mas também contribui para a democratização do acesso à energia sustentável em locais onde a infraestrutura convencional é limitada.
 
 ## Circuito
 ### Componentes utilizados
@@ -17,11 +21,15 @@ Esse projeto busca abordar a necessidade de soluções de energias renováveis a
 
 ### Manual de utilização
 - Crie uma máquina Virtual (local ou no cloud) para fazer o uso do docker - recomendado utilizar o linux;
+- Abra as seguintes portas **TCP** para utilização de cada módulo do FIWARE
+```
+1026: Orion Context Broker | 1883: Eclipse-Mosquito MQTT | 4041: IoT-Agent MQTT | 8666: STH-Comet:
+```
 - Realize a instalação Fiware ou o [FIWARE Descomplicado](https://github.com/fabiocabrini/fiware);
 - Com o FIWARE instalado, devemos transformar esse módulos em serviços, utilizando o [Docker](https://www.docker.com/);
 - Após a instalação do docker e modularização do serviços, utilize o comando `sudo docker compose up -d` para inicializar o Docker;
 - Realize a configuração de sua [collection](https://github.com/fabiocabrini/fiware/blob/main/FIWARE%20Descomplicado.postman_collection.json) (recomendação: Postman);
-- Faça as devidas alterações no [sketch.ino](/sketch.ino) de acordo com a lógica de seu programa e os dispositivos IoT que serão utilizados;
+- Faça as devidas alterações no [sketch.ino](/sketch.ino) de acordo com a lógica de seu programa e os dispositivos IoT que serão utilizados (Vale lembrar também que as variáveis "SSID" e "PASSWORD" podem ser alteradas com respectivamente as informações de Nome do seu Wifi e a senha - caso contrário, pode ser utilizado a conexão padrão que o próprio simulador do Wokwi disponibiliza;
 
 ### Arquitetura do projeto
 ![architecture](https://github.com/user-attachments/assets/60c8cd75-7416-4107-9f3f-bd73ed70b870)
@@ -60,6 +68,12 @@ WantedBy=multi-user.target                                  # Define que o servi
 4 - Verifique o status de seu serviço `sudo systemctl status api-sth.service` e inicialize-o se necessário `sudo systemctl start api-sth.service`; <br>
 5 - Para ter total certeza de que o serviço irá inicializar com o Linux, utilize o comando `sudo systemctl enable api-sth.service`;
 
+## Links uteis
+- [FIWARE](https://github.com/FIWARE/tutorials.IoT-over-MQTT) - O original, este utilizado no projeto atual é uma versão "descomplicada".
+- [Microsoft Azure](https://azure.microsoft.com/pt-br)
+- [AWS](https://aws.amazon.com/)
+- [Simulação no Wokwi](https://wokwi.com/projects/414369321746737153)
+- 
 ## Desenvolvedores do projeto:
 
 | **Nome** | **RM**                 | **LinkedIn** |
